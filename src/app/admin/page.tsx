@@ -62,11 +62,11 @@ export default async function AdminPage() {
     redirect("/login");
   }
 
-  let examsList = fallbackExamsList;
+  let examsList: ExamWithHierarchy[] = [];
 
   try {
     const listRes = await getExams();
-    if (listRes.success && listRes.exams.length > 0) {
+    if (listRes.success) {
       const fullExams: ExamWithHierarchy[] = [];
       for (const ex of listRes.exams) {
         const hRes = await getExamSyllabus(ex.id, session.user.id);
@@ -74,12 +74,11 @@ export default async function AdminPage() {
           fullExams.push(hRes.exam);
         }
       }
-      if (fullExams.length > 0) {
-        examsList = fullExams;
-      }
+      examsList = fullExams;
     }
   } catch (err) {
     console.warn("Using fallback admin data:", err);
+    examsList = fallbackExamsList;
   }
 
   return <AdminClient exams={examsList} />;

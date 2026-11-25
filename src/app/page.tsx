@@ -86,7 +86,7 @@ export default async function HomePage() {
 
   try {
     const examsResult = await getExams();
-    if (examsResult.success && examsResult.exams.length > 0) {
+    if (examsResult.success) {
       examList = examsResult.exams.map((e) => ({
         id: e.id,
         title: e.title,
@@ -94,9 +94,23 @@ export default async function HomePage() {
         description: e.description,
       }));
 
-      const hierarchyResult = await getExamSyllabus(examList[0].id, session.user.id);
-      if (hierarchyResult.success && hierarchyResult.exam) {
-        activeHierarchy = hierarchyResult.exam;
+      if (examList.length > 0) {
+        const hierarchyResult = await getExamSyllabus(examList[0].id, session.user.id);
+        if (hierarchyResult.success && hierarchyResult.exam) {
+          activeHierarchy = hierarchyResult.exam;
+        }
+      } else {
+        activeHierarchy = {
+          id: "",
+          title: "No Exam Created Yet",
+          slug: "",
+          description: "Click the + button above to create your first examination syllabus.",
+          units: [],
+          totalQuestions: 0,
+          totalSubUnits: 0,
+          totalCompletedSubUnits: 0,
+          masteryPercentage: 0,
+        };
       }
     }
   } catch (err) {

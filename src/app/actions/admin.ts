@@ -1,10 +1,21 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { exams, units, subUnits, questions, options } from "@/db/schema";
 import { eq, asc, desc } from "drizzle-orm";
 import { ParsedQuestion } from "@/lib/parser";
 import { localStore } from "@/lib/storage";
+
+const isUuid = (id?: string | null) =>
+  !!id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+function revalidateAppPaths() {
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/notebook");
+  revalidatePath("/analytics");
+}
 
 export async function createExam(title: string, slug: string, description?: string) {
   try {
@@ -82,7 +93,13 @@ export async function updateExam(examId: string, title: string, description?: st
 
 export async function deleteExam(examId: string) {
   try {
+    if (!isUuid(examId)) {
+      localStore.deleteExam(examId);
+      revalidateAppPaths();
+      return { success: true };
+    }
     await db.delete(exams).where(eq(exams.id, examId));
+    revalidateAppPaths();
     return { success: true };
   } catch (error) {
     console.warn("DB offline, deleting exam in local store");

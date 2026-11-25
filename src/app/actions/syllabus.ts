@@ -39,16 +39,16 @@ export interface ExamWithHierarchy {
   masteryPercentage: number;
 }
 
+const isUuid = (id?: string | null) =>
+  !!id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
 export async function getExams() {
   try {
     const list = await db.query.exams.findMany({
       where: eq(exams.isPublished, true),
       orderBy: (exams, { desc }) => [desc(exams.createdAt)],
     });
-    if (list.length > 0) {
-      return { success: true, exams: list };
-    }
-    return { success: true, exams: localStore.getExams() };
+    return { success: true, exams: list };
   } catch (error) {
     console.warn("DB offline, loading exams from local store");
     return { success: true, exams: localStore.getExams() };
@@ -60,8 +60,17 @@ export async function getExamSyllabus(
   userId?: string
 ): Promise<{ success: boolean; exam?: ExamWithHierarchy; error?: string }> {
   try {
+    if (!isUuid(examId)) {
+      const localHierarchy = localStore.getExamHierarchy(examId);
+      if (localHierarchy) {
+        return { success: true, exam: localHierarchy };
+      }
+      return { success: false, error: "Exam not found" };
+    }
+
     const session = !userId ? await auth() : null;
     const effectiveUserId = userId || session?.user?.id;
+    const validUserId = isUuid(effectiveUserId) ? effectiveUserId : undefined;
 
     const examRecord = await db.query.exams.findFirst({
       where: eq(exams.id, examId),
@@ -75,9 +84,9 @@ export async function getExamSyllabus(
                 questions: {
                   columns: { id: true },
                 },
-                progress: effectiveUserId
+                progress: validUserId
                   ? {
-                      where: eq(userSyllabusProgress.userId, effectiveUserId),
+                      where: eq(userSyllabusProgress.userId, validUserId),
                     }
                   : undefined,
               },
