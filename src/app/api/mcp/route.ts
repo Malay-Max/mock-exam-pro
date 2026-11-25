@@ -69,10 +69,42 @@ export async function POST(req: Request) {
   return handleMcpRequest(req);
 }
 
-export async function GET(req: Request) {
-  return handleMcpRequest(req);
+export async function GET() {
+  return new Response(
+    JSON.stringify({
+      jsonrpc: "2.0",
+      error: {
+        code: -32000,
+        message: "Method not allowed: stateless MCP server does not expose a standalone GET SSE stream.",
+      },
+      id: null,
+    }),
+    {
+      status: 405,
+      headers: {
+        "Content-Type": "application/json",
+        Allow: "POST",
+      },
+    }
+  );
 }
 
-export async function DELETE(req: Request) {
-  return handleMcpRequest(req);
+export async function DELETE() {
+  return new Response(
+    JSON.stringify({
+      jsonrpc: "2.0",
+      error: {
+        code: -32000,
+        message: "Method not allowed: stateless MCP server does not maintain sessions.",
+      },
+      id: null,
+    }),
+    {
+      status: 405,
+      headers: {
+        "Content-Type": "application/json",
+        Allow: "POST",
+      },
+    }
+  );
 }
