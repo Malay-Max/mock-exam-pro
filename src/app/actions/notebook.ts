@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { errorNotebook } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { localStore } from "@/lib/storage";
+import { auth } from "@/auth";
 
 export interface ErrorItem {
   id: string;
@@ -30,7 +31,8 @@ export async function getErrorNotebookItems(userId?: string): Promise<{
   dueCount: number;
 }> {
   try {
-    let effectiveUserId = userId;
+    const session = !userId ? await auth() : null;
+    let effectiveUserId = userId || session?.user?.id;
     if (!effectiveUserId) {
       const defaultUser = await db.query.users.findFirst();
       effectiveUserId = defaultUser?.id;

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
 export const metadata: Metadata = {
   title: "MockExam Pro — Multi-Exam Syllabus Mastery & Examination Simulator",
@@ -16,9 +17,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full bg-white text-slate-900 no-scrollbar">
       <body className="min-h-full flex flex-col bg-white text-slate-900 antialiased selection:bg-sky-100 selection:text-sky-900">
-        <Navbar />
-        <main className="flex-1 pb-20 sm:pb-12">{children}</main>
-        <MobileNav />
+        <AuthProvider>
+          <Navbar />
+          <main className="flex-1 pb-20 sm:pb-12">{children}</main>
+          <MobileNav />
+        </AuthProvider>
       </body>
     </html>
   );

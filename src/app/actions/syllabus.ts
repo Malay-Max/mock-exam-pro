@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { exams, units, subUnits, questions, userSyllabusProgress } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { localStore } from "@/lib/storage";
+import { auth } from "@/auth";
 
 export interface SubUnitWithStats {
   id: string;
@@ -59,6 +60,9 @@ export async function getExamSyllabus(
   userId?: string
 ): Promise<{ success: boolean; exam?: ExamWithHierarchy; error?: string }> {
   try {
+    const session = !userId ? await auth() : null;
+    const effectiveUserId = userId || session?.user?.id;
+
     const examRecord = await db.query.exams.findFirst({
       where: eq(exams.id, examId),
       with: {
@@ -71,9 +75,9 @@ export async function getExamSyllabus(
                 questions: {
                   columns: { id: true },
                 },
-                progress: userId
+                progress: effectiveUserId
                   ? {
-                      where: eq(userSyllabusProgress.userId, userId),
+                      where: eq(userSyllabusProgress.userId, effectiveUserId),
                     }
                   : undefined,
               },
@@ -182,8 +186,21 @@ export async function getExamSyllabus(
 
 export async function toggleSubUnitDone(subUnitId: string, userId: string, isCompleted: boolean) {
   try {
+    const session = await auth();
+    let effectiveUserId = session?.user?.id || (userId && userId !== "default-user-id" ? userId : undefined);
+
+    if (!effectiveUserId) {
+      const defaultUser = await db.query.users.findFirst();
+      effectiveUserId = defaultUser?.id;
+    }
+
+    if (!effectiveUserId) {
+      localStore.toggleSubUnitDone(subUnitId, isCompleted);
+      return { success: true };
+    }
+
     const existing = await db.query.userSyllabusProgress.findFirst({
-      where: (prog, { and, eq }) => and(eq(prog.subUnitId, subUnitId), eq(prog.userId, userId)),
+      where: (prog, { and, eq }) => and(eq(prog.subUnitId, subUnitId), eq(prog.userId, effectiveUserId!)),
     });
 
     if (existing) {
@@ -197,7 +214,7 @@ export async function toggleSubUnitDone(subUnitId: string, userId: string, isCom
         .where(eq(userSyllabusProgress.id, existing.id));
     } else {
       await db.insert(userSyllabusProgress).values({
-        userId,
+        userId: effectiveUserId,
         subUnitId,
         isCompleted,
         completedAt: isCompleted ? new Date() : null,

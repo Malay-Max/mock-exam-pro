@@ -5,6 +5,7 @@ import { questions, options, examSessions, examResponses, errorNotebook } from "
 import { inArray, eq } from "drizzle-orm";
 import { QuestionData } from "@/store/useAppStore";
 import { localStore } from "@/lib/storage";
+import { auth } from "@/auth";
 
 export async function getQuestionsForSubUnits(
   subUnitIds: string[],
@@ -145,7 +146,8 @@ export async function submitExamSession(input: SubmitSessionInput) {
   const finalScore = Math.max(0, Math.round(rawScore * 100) / 100);
 
   try {
-    let effectiveUserId = input.userId;
+    const authSession = !input.userId ? await auth() : null;
+    let effectiveUserId = input.userId || authSession?.user?.id;
     if (!effectiveUserId) {
       const defaultUser = await db.query.users.findFirst();
       effectiveUserId = defaultUser?.id;
