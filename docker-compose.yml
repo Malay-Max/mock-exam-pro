@@ -18,6 +18,7 @@ services:
         condition: service_healthy
     networks:
       - mockexam-net
+      - default
 
   db:
     image: postgres:16-alpine
@@ -42,5 +43,8 @@ volumes:
     driver: local
 
 networks:
+  default:
+    external: true
+    name: npm-network
   mockexam-net:
     driver: bridge
