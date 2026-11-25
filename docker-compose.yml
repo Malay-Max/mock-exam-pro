@@ -5,8 +5,6 @@ services:
       dockerfile: Dockerfile
     container_name: mockexam-app
     restart: always
-    ports:
-      - "3000:3000"
     environment:
       - DATABASE_URL=postgres://mockexam_user:mockexam_secure_pass@db:5432/mockexam
       - NEXTAUTH_URL=https://mocks.malaylayek.work.gd
