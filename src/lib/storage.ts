@@ -619,6 +619,49 @@ class LocalStore {
     return count;
   }
 
+  updateQuestion(
+    questionId: string,
+    stem: string,
+    opts: { id: string; key: string; text: string }[],
+    correctOptionKey: "A" | "B" | "C" | "D",
+    explanation?: string
+  ) {
+    for (const exam of this.exams) {
+      for (const unit of exam.units) {
+        for (const sub of unit.subUnits) {
+          const q = sub.questions.find((item) => item.id === questionId);
+          if (q) {
+            q.stem = stem;
+            q.correctOptionKey = correctOptionKey;
+            q.explanation = explanation;
+            q.options = opts.map((o) => ({
+              id: o.id,
+              key: o.key as "A" | "B" | "C" | "D",
+              text: o.text,
+            }));
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  deleteQuestion(questionId: string) {
+    for (const exam of this.exams) {
+      for (const unit of exam.units) {
+        for (const sub of unit.subUnits) {
+          const idx = sub.questions.findIndex((item) => item.id === questionId);
+          if (idx !== -1) {
+            sub.questions.splice(idx, 1);
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   getQuestionsForSubUnits(subUnitIds: string[], limit: number = 50): QuestionData[] {
     const list: QuestionData[] = [];
     for (const exam of this.exams) {

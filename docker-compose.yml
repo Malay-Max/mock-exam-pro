@@ -9,6 +9,7 @@ services:
       - DATABASE_URL=postgres://mockexam_user:mockexam_secure_pass@db:5432/mockexam
       - NEXTAUTH_URL=https://mocks.malaylayek.work.gd
       - NEXTAUTH_SECRET=mockexam_pro_production_secret_key_change_me
+      - MOCKEXAM_API_KEY=${MOCKEXAM_API_KEY:-mockexam_mcp_secret_token_change_me}
       - NODE_ENV=production
       - PORT=3000
     depends_on:

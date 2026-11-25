@@ -167,6 +167,12 @@ export async function deleteSubUnit(subUnitId: string) {
 
 export async function batchImportQuestions(subUnitId: string, parsedQuestions: ParsedQuestion[]) {
   try {
+    if (!isUuid(subUnitId)) {
+      const count = localStore.batchImportQuestions(subUnitId, parsedQuestions);
+      revalidateAppPaths();
+      return { success: true, importedCount: count };
+    }
+
     let importedCount = 0;
 
     for (const q of parsedQuestions) {
@@ -192,6 +198,7 @@ export async function batchImportQuestions(subUnitId: string, parsedQuestions: P
       importedCount += 1;
     }
 
+    revalidateAppPaths();
     return { success: true, importedCount };
   } catch (error) {
     console.warn("DB offline, importing questions into local store:", (error as Error).message);
@@ -202,6 +209,11 @@ export async function batchImportQuestions(subUnitId: string, parsedQuestions: P
 
 export async function getSubUnitQuestions(subUnitId: string) {
   try {
+    if (!isUuid(subUnitId)) {
+      const localQs = localStore.getQuestionsForSubUnits([subUnitId], 200);
+      return { success: true, questions: localQs };
+    }
+
     const qList = await db.query.questions.findMany({
       where: eq(questions.subUnitId, subUnitId),
       with: {
@@ -215,7 +227,7 @@ export async function getSubUnitQuestions(subUnitId: string) {
     return { success: true, questions: qList };
   } catch (error) {
     console.warn("DB offline, fetching sub-unit questions from local store");
-    const localQs = localStore.getQuestionsForSubUnits([subUnitId], 100);
+    const localQs = localStore.getQuestionsForSubUnits([subUnitId], 200);
     return { success: true, questions: localQs };
   }
 }
@@ -228,6 +240,18 @@ export async function updateQuestion(
   explanation?: string
 ) {
   try {
+    if (!isUuid(questionId)) {
+      localStore.updateQuestion(
+        questionId,
+        stem,
+        opts,
+        correctOptionKey as "A" | "B" | "C" | "D",
+        explanation
+      );
+      revalidateAppPaths();
+      return { success: true };
+    }
+
     await db
       .update(questions)
       .set({
@@ -238,23 +262,41 @@ export async function updateQuestion(
       .where(eq(questions.id, questionId));
 
     for (const opt of opts) {
-      await db
-        .update(options)
-        .set({ text: opt.text })
-        .where(eq(options.id, opt.id));
+      if (isUuid(opt.id)) {
+        await db
+          .update(options)
+          .set({ text: opt.text })
+          .where(eq(options.id, opt.id));
+      }
     }
 
+    revalidateAppPaths();
     return { success: true };
   } catch (error) {
+    localStore.updateQuestion(
+      questionId,
+      stem,
+      opts,
+      correctOptionKey as "A" | "B" | "C" | "D",
+      explanation
+    );
     return { success: true };
   }
 }
 
 export async function deleteQuestion(questionId: string) {
   try {
+    if (!isUuid(questionId)) {
+      localStore.deleteQuestion(questionId);
+      revalidateAppPaths();
+      return { success: true };
+    }
+
     await db.delete(questions).where(eq(questions.id, questionId));
+    revalidateAppPaths();
     return { success: true };
   } catch (error) {
+    localStore.deleteQuestion(questionId);
     return { success: true };
   }
 }
