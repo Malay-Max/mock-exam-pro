@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { getExams, getExamSyllabus, ExamWithHierarchy } from "@/app/actions/syllabus";
 import { AdminClient } from "@/components/admin/AdminClient";
 
@@ -55,6 +57,11 @@ const fallbackExamsList: ExamWithHierarchy[] = [
 ];
 
 export default async function AdminPage() {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/login");
+  }
+
   let examsList = fallbackExamsList;
 
   try {
@@ -62,7 +69,7 @@ export default async function AdminPage() {
     if (listRes.success && listRes.exams.length > 0) {
       const fullExams: ExamWithHierarchy[] = [];
       for (const ex of listRes.exams) {
-        const hRes = await getExamSyllabus(ex.id);
+        const hRes = await getExamSyllabus(ex.id, session.user.id);
         if (hRes.success && hRes.exam) {
           fullExams.push(hRes.exam);
         }

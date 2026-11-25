@@ -10,8 +10,12 @@ export const MobileNav: React.FC = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  // If in an active exam/quiz session, hide bottom nav to avoid distraction
-  if (pathname.startsWith("/exam") || pathname.startsWith("/quiz")) {
+  // If in an active exam/quiz session or unauthenticated, hide bottom app nav
+  if (
+    pathname.startsWith("/exam") ||
+    pathname.startsWith("/quiz") ||
+    !session?.user
+  ) {
     return null;
   }
 

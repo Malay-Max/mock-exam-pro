@@ -2,6 +2,7 @@
 
 import React, { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useAppStore } from "@/store/useAppStore";
 import { QuestionCard } from "@/components/exam/QuestionCard";
 import { ExamScorecard } from "@/components/exam/ExamScorecard";
@@ -10,6 +11,7 @@ import { ArrowLeft, ArrowRight, Flame, CheckCircle2 } from "lucide-react";
 
 export default function QuizPage() {
   const router = useRouter();
+  const { status } = useSession();
   const [isPending, startTransition] = useTransition();
 
   const {
@@ -23,10 +25,12 @@ export default function QuizPage() {
   } = useAppStore();
 
   useEffect(() => {
-    if (!activeSession) {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated" && !activeSession) {
       router.push("/");
     }
-  }, [activeSession, router]);
+  }, [status, activeSession, router]);
 
   // Keyboard navigation for Instant Quiz Mode
   useEffect(() => {

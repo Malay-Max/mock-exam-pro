@@ -1,5 +1,7 @@
 import { getExams, getExamSyllabus, ExamWithHierarchy } from "@/app/actions/syllabus";
 import { SyllabusHubClient } from "@/components/syllabus/SyllabusHubClient";
+import { LandingPage } from "@/components/landing/LandingPage";
+import { auth } from "@/auth";
 
 // Fallback seed data if database is not connected during initial cold boot
 const fallbackExams: { id: string; title: string; slug: string; description: string | null }[] = [
@@ -74,6 +76,11 @@ const fallbackHierarchy: ExamWithHierarchy = {
 };
 
 export default async function HomePage() {
+  const session = await auth();
+  if (!session?.user) {
+    return <LandingPage />;
+  }
+
   let examList = fallbackExams;
   let activeHierarchy = fallbackHierarchy;
 
@@ -87,7 +94,7 @@ export default async function HomePage() {
         description: e.description,
       }));
 
-      const hierarchyResult = await getExamSyllabus(examList[0].id);
+      const hierarchyResult = await getExamSyllabus(examList[0].id, session.user.id);
       if (hierarchyResult.success && hierarchyResult.exam) {
         activeHierarchy = hierarchyResult.exam;
       }

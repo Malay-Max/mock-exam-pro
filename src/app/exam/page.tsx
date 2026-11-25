@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useAppStore } from "@/store/useAppStore";
 import { QuestionCard } from "@/components/exam/QuestionCard";
 import { QuestionPalette } from "@/components/exam/QuestionPalette";
@@ -11,6 +12,7 @@ import { Timer, Bookmark, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, X 
 
 export default function ExamPage() {
   const router = useRouter();
+  const { status } = useSession();
   const [isPending, startTransition] = useTransition();
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showMobilePalette, setShowMobilePalette] = useState(false);
@@ -29,12 +31,14 @@ export default function ExamPage() {
     exitSession,
   } = useAppStore();
 
-  // Redirect if no active session
+  // Redirect if unauthenticated or no active session
   useEffect(() => {
-    if (!activeSession) {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated" && !activeSession) {
       router.push("/");
     }
-  }, [activeSession, router]);
+  }, [status, activeSession, router]);
 
   // Timer interval
   useEffect(() => {
