@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useTransition } from "react";
 import { parseQuestionText, ParseResult } from "@/lib/parser";
-import { batchImportQuestions } from "@/app/actions/admin";
+import { batchImportQuestions, deleteExam } from "@/app/actions/admin";
 import { ExamWithHierarchy } from "@/app/actions/syllabus";
 import { SelectDropdown } from "@/components/ui/SelectDropdown";
-import { Upload, CheckCircle2, AlertTriangle, Layers, BookOpen, Clock } from "lucide-react";
+import { Upload, CheckCircle2, AlertTriangle, Trash2 } from "lucide-react";
 
 interface AdminClientProps {
   exams: ExamWithHierarchy[];
@@ -97,6 +97,32 @@ export const AdminClient: React.FC<AdminClientProps> = ({ exams: initialExams })
     });
   };
 
+  const handleDeleteExam = () => {
+    if (!currentExam) return;
+    const confirmed = confirm(
+      `Are you sure you want to permanently delete "${currentExam.title}" along with all its units, topics, and questions? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    const deletedTitle = currentExam.title;
+    const deletedId = currentExam.id;
+
+    startTransition(async () => {
+      const res = await deleteExam(deletedId);
+      if (res.success) {
+        const remaining = examsList.filter((e) => e.id !== deletedId);
+        setExamsList(remaining);
+        setSelectedExamId(remaining[0]?.id || "");
+        setSelectedUnitId("");
+        setSelectedSubUnitId("");
+        setImportSuccessMsg(`Exam "${deletedTitle}" has been permanently deleted.`);
+        setTimeout(() => setImportSuccessMsg(null), 5000);
+      } else {
+        alert("Failed to delete exam.");
+      }
+    });
+  };
+
   // Styled dropdown options
   const examSelectOptions = examsList.map((ex) => ({
     value: ex.id,
@@ -151,15 +177,27 @@ export const AdminClient: React.FC<AdminClientProps> = ({ exams: initialExams })
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div>
                   <label className="text-[11px] font-bold text-slate-600 block mb-1">Exam</label>
-                  <SelectDropdown
-                    options={examSelectOptions}
-                    value={selectedExamId}
-                    onChange={(val) => {
-                      setSelectedExamId(val);
-                      setSelectedUnitId("");
-                      setSelectedSubUnitId("");
-                    }}
-                  />
+                  <div className="flex items-center gap-1.5">
+                    <SelectDropdown
+                      options={examSelectOptions}
+                      value={selectedExamId}
+                      onChange={(val) => {
+                        setSelectedExamId(val);
+                        setSelectedUnitId("");
+                        setSelectedSubUnitId("");
+                      }}
+                      className="flex-1 min-w-0"
+                    />
+                    <button
+                      type="button"
+                      disabled={!currentExam || isPending}
+                      onClick={handleDeleteExam}
+                      title="Delete selected exam entirely"
+                      className="w-9 h-9 rounded-xl bg-white hover:bg-red-50 border border-slate-300 hover:border-red-300 text-slate-500 hover:text-red-600 disabled:opacity-40 flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 <div>
