@@ -355,7 +355,10 @@ class LocalStore {
   }
 
   getExamHierarchy(examId: string): ExamWithHierarchy | null {
-    const exam = this.exams.find((e) => e.id === examId) || this.exams[0];
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(examId);
+    const exam = isUuid
+      ? this.exams.find((e) => e.id === examId) || null
+      : this.exams.find((e) => e.id === examId) || this.exams[0];
     if (!exam) return null;
 
     let totalQuestions = 0;

@@ -84,11 +84,13 @@ export async function getExamSyllabus(
                 questions: {
                   columns: { id: true },
                 },
-                progress: validUserId
+                ...(validUserId
                   ? {
-                      where: eq(userSyllabusProgress.userId, validUserId),
+                      progress: {
+                        where: eq(userSyllabusProgress.userId, validUserId),
+                      },
                     }
-                  : undefined,
+                  : {}),
               },
             },
           },
@@ -184,7 +186,7 @@ export async function getExamSyllabus(
       },
     };
   } catch (error) {
-    console.warn("DB offline, fetching exam syllabus from local store");
+    console.error("getExamSyllabus DB error:", (error as Error).message);
     const localHierarchy = localStore.getExamHierarchy(examId);
     if (localHierarchy) {
       return { success: true, exam: localHierarchy };

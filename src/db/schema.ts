@@ -178,3 +178,14 @@ export const errorNotebookRelations = relations(errorNotebook, ({ one }) => ({
     references: [questions.id],
   }),
 }));
+
+export const userSyllabusProgressRelations = relations(userSyllabusProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [userSyllabusProgress.userId],
+    references: [users.id],
+  }),
+  subUnit: one(subUnits, {
+    fields: [userSyllabusProgress.subUnitId],
+    references: [subUnits.id],
+  }),
+}));
